@@ -1,15 +1,19 @@
 import { create } from 'zustand';
 import type { User, Therapist, Appointment, Message } from '../types';
+import { seekerAPI, helperAPI } from '../services/api';
 
 interface Store {
   user: User | null;
   therapists: Therapist[];
   appointments: Appointment[];
   messages: Message[];
+  isLoading: boolean;
+  error: string | null;
   setUser: (user: User | null) => void;
   addAppointment: (appointment: Appointment) => void;
   addMessage: (message: Message) => void;
-  getMatches: () => Therapist[];
+  getMatches: () => Promise<Therapist[]>;
+  fetchUserProfile: () => Promise<void>;
 }
 
 export const useStore = create<Store>((set, get) => ({
@@ -17,6 +21,8 @@ export const useStore = create<Store>((set, get) => ({
   therapists: [],
   appointments: [],
   messages: [],
+  isLoading: false,
+  error: null,
   
   setUser: (user) => set({ user }),
   
@@ -30,24 +36,37 @@ export const useStore = create<Store>((set, get) => ({
       messages: [...state.messages, message] 
     })),
   
-  getMatches: () => {
-    const { user, therapists } = get();
+  getMatches: async () => {
+    const { user } = get();
     if (!user) return [];
-    
-    return therapists.filter(therapist => {
-      const specialtyMatch = therapist.specialties.some(s => 
-        user.preferences.specialties.includes(s));
-      const languageMatch = therapist.languages.some(l => 
-        user.preferences.languages.includes(l));
-      const therapyTypeMatch = therapist.therapyTypes.some(t => 
-        user.preferences.therapyType.includes(t));
-      const genderMatch = !user.preferences.gender || 
-        therapist.gender === user.preferences.gender;
-      const ageMatch = therapist.age >= user.preferences.ageRange[0] && 
-        therapist.age <= user.preferences.ageRange[1];
-        
-      return specialtyMatch && languageMatch && 
-        therapyTypeMatch && genderMatch && ageMatch;
-    }).sort((a, b) => b.rating - a.rating);
+
+    set({ isLoading: true, error: null });
+    try {
+      const matches = await seekerAPI.getMatches();
+      set({ therapists: matches });
+      return matches;
+    } catch (error: any) {
+      set({ error: error.message });
+      return [];
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchUserProfile: async () => {
+    const { user } = get();
+    if (!user) return;
+
+    set({ isLoading: true, error: null });
+    try {
+      const profile = user.role === 'helper' 
+        ? await helperAPI.getProfile()
+        : await seekerAPI.getProfile();
+      set({ user: { ...user, ...profile } });
+    } catch (error: any) {
+      set({ error: error.message });
+    } finally {
+      set({ isLoading: false });
+    }
   },
 }));
