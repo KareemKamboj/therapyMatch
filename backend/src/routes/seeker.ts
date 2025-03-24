@@ -1,51 +1,38 @@
-import express, { Request, Response } from 'express';
+import express, { RequestHandler } from 'express';
 import { protect } from '../middleware/auth';
 import { requireRole } from '../middleware/roleAuth';
 import { User } from '../models/User';
 import { validate } from '../middleware/validate';
 import { findMatches } from '../services/matching';
 import { query } from 'express-validator';
-import mongoose from 'mongoose';
+import { AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 
 // Apply middleware to all routes
 router.all('*', protect, requireRole('seeker'));
 
-interface TypedRequest extends Request {
-  user: {
-    _id: mongoose.Types.ObjectId;
-    role: string;
-    seekerPreferences?: {
-      therapyType: string[];
-      specialties: string[];
-      languages: string[];
-      availability: {
-        preferredDays: string[];
-        preferredTimes: string[];
-        timezone: string;
-      };
-    };
-  };
-}
-
-interface QueryParams {
-  limit?: string;
-}
-
 // Get seeker preferences
-router.get('/preferences', (req: Request, res: Response) => {
+router.get('/preferences', (req: AuthRequest, res) => {
+  if (!req.user?.seekerPreferences) {
+    res.status(404).json({ message: 'Preferences not found' });
+    return;
+  }
   res.json(req.user.seekerPreferences);
 });
 
 // Update seeker preferences
-router.put('/preferences', async (req: Request, res: Response) => {
+router.put('/preferences', async (req: AuthRequest, res) => {
   const { therapyType, specialties, gender, ageRange, languages, availability } = req.body;
   
   try {
-    const user = req.user;
-    if (!user.seekerPreferences) {
-      user.seekerPreferences = {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authorized' });
+      return;
+    }
+
+    if (!req.user.seekerPreferences) {
+      req.user.seekerPreferences = {
         therapyType: [],
         specialties: [],
         languages: [],
@@ -58,7 +45,7 @@ router.put('/preferences', async (req: Request, res: Response) => {
     }
 
     // Update the seeker preferences
-    Object.assign(user.seekerPreferences, {
+    Object.assign(req.user.seekerPreferences, {
       therapyType,
       specialties,
       gender,
@@ -68,21 +55,26 @@ router.put('/preferences', async (req: Request, res: Response) => {
     });
 
     // Save the updated user
-    await user.save();
-    res.json(user.seekerPreferences);
+    await req.user.save();
+    res.json(req.user.seekerPreferences);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 });
 
 // Controller functions
-const getMatches = async (req: Request, res: Response) => {
+const getMatches: RequestHandler = async (req: AuthRequest, res, next) => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authorized' });
+      return;
+    }
+
     const limit = req.query.limit ? Number(req.query.limit) : 10;
     const matches = await findMatches(req.user._id, limit);
     res.json(matches);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 

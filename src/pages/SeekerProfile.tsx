@@ -53,32 +53,32 @@ function SeekerProfile() {
           <QuoteOfTheDay />
         </div>
 
-        {/* Quick Actions */}
+          {/* Quick Actions */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <button
-              onClick={() => navigate('/matches')}
+              <button
+                onClick={() => navigate('/matches')}
               className="flex items-center space-x-3 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
-            >
-              <Users className="h-5 w-5" />
-              <span>Find Matches</span>
-            </button>
-            <button
-              onClick={() => navigate('/appointments')}
+              >
+                <Users className="h-5 w-5" />
+                <span>Find Matches</span>
+              </button>
+              <button
+                onClick={() => navigate('/appointments')}
               className="flex items-center space-x-3 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
-            >
-              <Calendar className="h-5 w-5" />
-              <span>View Appointments</span>
-            </button>
-            <button
-              onClick={() => navigate('/messages')}
+              >
+                <Calendar className="h-5 w-5" />
+                <span>View Appointments</span>
+              </button>
+              <button
+                onClick={() => navigate('/messages')}
               className="flex items-center space-x-3 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
-            >
-              <MessageCircle className="h-5 w-5" />
-              <span>Messages</span>
-            </button>
+              >
+                <MessageCircle className="h-5 w-5" />
+                <span>Messages</span>
+              </button>
+            </div>
           </div>
-        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {/* Pending Matches Card */}

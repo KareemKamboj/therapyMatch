@@ -1,55 +1,34 @@
-/**
- * @fileoverview Type definitions for the TherapyMatch application
- */
-
-export type UserRole = 'seeker' | 'helper' | 'admin';
-
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
-  avatar?: string;
-  preferences?: UserPreferences;
-  matches?: Therapist[];
-}
-
-export interface UserPreferences {
-  specialties: string[];
-  gender: 'male' | 'female' | 'any' | 'not_applicable';
-  ageRange: [number, number];
-  languages: string[];
-  therapyType: string[];
-  region: string;
-  currentIssues: string[];
-  otherTopic?: string;
-  availability: {
-    preferredDays: string[];
-    preferredTimes: string[];
-    timezone: string;
+  avatar: string;
+  preferences: {
+    specialties: string[];
+    gender?: 'male' | 'female' | 'other';
+    ageRange: [number, number];
+    languages: string[];
+    therapyType: string[];
   };
+  matches: string[];
 }
 
 export interface Therapist {
   id: string;
   name: string;
   email: string;
-  avatar?: string;
+  avatar: string;
   specialties: string[];
-  languages: string[];
-  therapyTypes: string[];
   gender: 'male' | 'female' | 'other';
   age: number;
-  rating: number;
-  experience: number;
+  languages: string[];
+  therapyTypes: string[];
   education: string[];
-  certifications: string[];
-  hourlyRate: number;
-  availability: {
-    availableDays: string[];
-    availableTimes: string[];
-    timezone: string;
-  };
+  experience: number;
+  bio: string;
+  availability: TimeSlot[];
+  rating: number;
+  reviews: Review[];
 }
 
 export interface TimeSlot {
@@ -70,12 +49,10 @@ export interface Review {
 
 export interface Appointment {
   id: string;
+  userId: string;
   therapistId: string;
-  seekerId: string;
-  date: string;
-  time: string;
+  timeSlot: TimeSlot;
   status: 'scheduled' | 'completed' | 'cancelled';
-  notes?: string;
 }
 
 export interface Message {

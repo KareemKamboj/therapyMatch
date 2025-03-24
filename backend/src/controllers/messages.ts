@@ -1,11 +1,14 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { Message } from '../models/Message';
 import { User } from '../models/User';
-import mongoose from 'mongoose';
+import { AuthRequest } from '../middleware/auth';
 
 // Send a message
-export const sendMessage = async (req: Request, res: Response) => {
+export const sendMessage = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
     const { receiver, content } = req.body;
     const sender = req.user._id;
 
@@ -31,8 +34,11 @@ export const sendMessage = async (req: Request, res: Response) => {
 };
 
 // Get conversation with another user
-export const getConversation = async (req: Request, res: Response) => {
+export const getConversation = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
     const { userId } = req.params;
     const currentUser = req.user._id;
 
@@ -64,8 +70,11 @@ export const getConversation = async (req: Request, res: Response) => {
 };
 
 // Get user's conversations
-export const getConversations = async (req: Request, res: Response) => {
+export const getConversations = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
     const userId = req.user._id;
 
     // Get the last message from each conversation
@@ -122,8 +131,11 @@ export const getConversations = async (req: Request, res: Response) => {
 };
 
 // Get unread message count
-export const getUnreadCount = async (req: Request, res: Response) => {
+export const getUnreadCount = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
     const userId = req.user._id;
 
     const count = await Message.countDocuments({

@@ -1,15 +1,16 @@
-import { Request, Response, NextFunction } from 'express';
+import { RequestHandler } from 'express';
 import { validationResult, ValidationChain } from 'express-validator';
 
-export const validate = (validations: ValidationChain[]) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+export const validate = (validations: ValidationChain[]): RequestHandler => {
+  return async (req, res, next) => {
     await Promise.all(validations.map(validation => validation.run(req)));
 
     const errors = validationResult(req);
     if (errors.isEmpty()) {
-      return next();
+      next();
+      return;
     }
 
-    return res.status(400).json({ errors: errors.array() });
+    res.status(400).json({ errors: errors.array() });
   };
 }; 

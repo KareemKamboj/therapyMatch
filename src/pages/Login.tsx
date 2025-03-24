@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { authAPI } from '../services/api';
+import { GoogleLogin } from '@react-oauth/google';
 
 function Login() {
   const navigate = useNavigate();
@@ -11,34 +13,52 @@ function Login() {
     password: '',
   });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For demo purposes, accept any email/password
-    setUser({
-      id: '1',
-      name: 'Demo User',
-      email: formData.email,
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      preferences: {
-        specialties: [],
-        gender: 'not_applicable',
-        ageRange: [18, 100],
-        languages: [],
-        therapyType: [],
-        region: '',
-        role: 'seeking_help',
-        currentIssues: [],
-        otherTopic: '',
-        availability: {
-          preferredDays: [],
-          preferredTimes: [],
-          timezone: '',
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await authAPI.login(formData);
+      setUser(response);
+      navigate('/profile');
+    } catch (error: any) {
+      if (error.response?.data?.code === 'USER_NOT_FOUND') {
+        setError('User not found. Please register first.');
+      } else if (error.response?.data?.code === 'INVALID_PASSWORD') {
+        setError('Invalid password. Please try again.');
+      } else {
+        setError('An error occurred during login. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      const response = await fetch('http://localhost:3001/api/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      },
-      matches: [],
-    });
-    navigate('/profile');
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Google login failed');
+      }
+
+      setUser(data.user);
+      localStorage.setItem('token', data.token);
+      navigate('/profile');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google login failed');
+    }
   };
 
   return (
@@ -106,11 +126,36 @@ function Login() {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                disabled={isLoading}
+                className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign in
+                {isLoading ? 'Signing in...' : 'Sign in'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </button>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <div className="w-full">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => {
+                    setError('Google login failed');
+                  }}
+                  useOneTap
+                  theme="outline"
+                  size="large"
+                  width="100%"
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between">

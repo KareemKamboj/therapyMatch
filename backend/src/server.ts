@@ -32,14 +32,17 @@ app.use(morgan('dev')); // HTTP request logger
  * Establishes connection to MongoDB using connection string from environment variables.
  * Implements basic error handling and logging.
  */
-mongoose.connect(process.env.MONGODB_URI!)
-  .then(() => {
-    console.log('Connected to MongoDB');
-  })
-  .catch((error) => {
-    console.error('MongoDB connection error:', error);
-    process.exit(1); // Exit process on connection failure
-  });
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI!);
+    console.log("✅ MongoDB Connected Successfully");
+  } catch (error) {
+    console.error("❌ MongoDB Connection Error:", error);
+    process.exit(1);
+  }
+};
+
+connectDB();
 
 // API Routes Configuration
 app.use('/api/auth', authRoutes);   // Authentication routes (login, register)

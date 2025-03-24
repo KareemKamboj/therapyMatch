@@ -1,20 +1,21 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User';
+import { User, IUser } from '../models/User';
+import mongoose from 'mongoose';
 
 interface JwtPayload {
   id: string;
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-    }
-  }
+// Define AuthRequest as a generic type that extends Request
+export interface AuthRequest<P = any> extends Request<P> {
+  user?: IUser & { _id: mongoose.Types.ObjectId };
 }
 
-export const protect = async (req: Request, res: Response, next: NextFunction) => {
+// Define a custom RequestHandler type that uses AuthRequest
+export type AuthRequestHandler<P = any> = RequestHandler<P, any, any, any>;
+
+export const protect: AuthRequestHandler = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     let token;
 
@@ -23,7 +24,8 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     }
 
     if (!token) {
-      return res.status(401).json({ message: 'Not authorized to access this route' });
+      res.status(401).json({ message: 'Not authorized to access this route' });
+      return; // Explicitly return to prevent further execution
     }
 
     // Verify token
@@ -32,12 +34,14 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     // Get user from token
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+      res.status(401).json({ message: 'User not found' });
+      return; // Explicitly return to stop execution
     }
 
-    req.user = user;
-    next();
+    // Attach user to request
+    req.user = user as IUser & { _id: mongoose.Types.ObjectId };
+    next(); // Call next middleware
   } catch (error) {
     res.status(401).json({ message: 'Not authorized to access this route' });
   }
-}; 
+};

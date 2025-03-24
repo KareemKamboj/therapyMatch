@@ -1,10 +1,15 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { Appointment } from '../models/Appointment';
-import mongoose from 'mongoose';
+import { AuthRequest } from '../middleware/auth';
 
 // Create appointment
-export const createAppointment = async (req: Request, res: Response) => {
+export const createAppointment = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authorized' });
+      return;
+    }
+
     const { dateTime, duration, type, notes } = req.body;
     const { helperId } = req.params;
 
@@ -24,8 +29,13 @@ export const createAppointment = async (req: Request, res: Response) => {
 };
 
 // Get user's appointments (as either helper or seeker)
-export const getUserAppointments = async (req: Request, res: Response) => {
+export const getUserAppointments = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authorized' });
+      return;
+    }
+
     const userId = req.user._id;
     const { status, startDate, endDate } = req.query;
 
@@ -56,8 +66,13 @@ export const getUserAppointments = async (req: Request, res: Response) => {
 };
 
 // Update appointment status
-export const updateAppointment = async (req: Request, res: Response) => {
+export const updateAppointment = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authorized' });
+      return;
+    }
+
     const { appointmentId } = req.params;
     const { status, notes, meetingLink } = req.body;
     const userId = req.user._id;
@@ -91,7 +106,7 @@ export const updateAppointment = async (req: Request, res: Response) => {
 };
 
 // Check helper availability
-export const checkHelperAvailability = async (req: Request, res: Response) => {
+export const checkHelperAvailability = async (req: AuthRequest, res: Response) => {
   try {
     const { helperId } = req.params;
     const { date } = req.query;

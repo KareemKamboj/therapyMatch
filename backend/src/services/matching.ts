@@ -109,7 +109,7 @@ export const findMatches = async (seekerId: mongoose.Types.ObjectId, limit: numb
       const totalScore = languageScore + therapyTypeScore + specialtyScore + availabilityScore;
 
       scores.push({
-        helper: helper._id,
+        helper: helper._id as mongoose.Types.ObjectId,
         score: totalScore,
         matchedCriteria: {
           languages: languageScore,
@@ -135,8 +135,8 @@ export const findMatches = async (seekerId: mongoose.Types.ObjectId, limit: numb
     // Combine helper details with match scores and return
     return matchedHelpers.map(helper => ({
       ...helper,
-      matchScore: topMatches.find(match => match.helper.equals(helper._id))!.score,
-      matchedCriteria: topMatches.find(match => match.helper.equals(helper._id))!.matchedCriteria,
+      matchScore: topMatches.find(match => match.helper.toString() === (helper._id as mongoose.Types.ObjectId).toString())!.score,
+      matchedCriteria: topMatches.find(match => match.helper.toString() === (helper._id as mongoose.Types.ObjectId).toString())!.matchedCriteria,
     }));
   } catch (error) {
     throw error;

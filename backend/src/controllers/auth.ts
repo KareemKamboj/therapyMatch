@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { Request, Response, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 import { User, IUser } from '../models/User';
 import mongoose from 'mongoose';
+import { AuthRequest, AuthRequestHandler } from '../middleware/auth';
 
 // Generate JWT Token
 const generateToken = (id: string) => {
@@ -13,14 +14,15 @@ const generateToken = (id: string) => {
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
-export const register = async (req: Request, res: Response) => {
+export const register: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, name, role } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      res.status(400).json({ message: 'User already exists' });
+      return;
     }
 
     // Create user with role-specific fields
@@ -84,22 +86,34 @@ export const register = async (req: Request, res: Response) => {
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
-export const login = async (req: Request, res: Response) => {
+export const login: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
+    console.log('Login attempt for email:', email);
 
     // Check for user email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      console.log('Login failed: User not found for email:', email);
+      res.status(401).json({ 
+        message: 'User not found. Please register first.',
+        code: 'USER_NOT_FOUND'
+      });
+      return;
     }
 
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      console.log('Login failed: Invalid password for email:', email);
+      res.status(401).json({ 
+        message: 'Invalid password',
+        code: 'INVALID_PASSWORD'
+      });
+      return;
     }
 
+    console.log('Login successful for user:', { id: user._id, email: user.email, role: user.role });
     const userId = user._id as mongoose.Types.ObjectId;
     res.json({
       _id: userId.toString(),
@@ -110,21 +124,26 @@ export const login = async (req: Request, res: Response) => {
       token: generateToken(userId.toString()),
     });
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    console.error('Login error:', error);
+    res.status(400).json({ 
+      message: 'An error occurred during login',
+      code: 'LOGIN_ERROR'
+    });
   }
 };
 
 // @desc    Get current user
 // @route   GET /api/auth/me
 // @access  Private
-export const getMe = async (req: Request, res: Response) => {
+export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
     }
-    res.json(user);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+
+    res.json(req.user);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
-}; 
+};

@@ -32,6 +32,8 @@ export const authAPI = {
     email: string;
     password: string;
     role: 'seeker' | 'helper';
+    helperType?: 'licensed' | 'non_traditional';
+    seekerType?: 'licensed' | 'non_traditional' | 'all';
   }) => {
     const response = await api.post('/auth/register', userData);
     return response.data;

@@ -54,7 +54,7 @@ function Matches() {
   };
 
   if (!currentTherapist) {
-    return (
+  return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">No More Profiles</h2>
@@ -110,7 +110,7 @@ function Matches() {
               </div>
             </div>
 
-            <div>
+              <div>
               <h3 className="font-semibold text-gray-900 mb-2">Languages</h3>
               <div className="flex flex-wrap gap-2">
                 {currentTherapist.languages.map((language: string) => (
@@ -122,7 +122,7 @@ function Matches() {
                   </span>
                 ))}
               </div>
-            </div>
+              </div>
 
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Experience</h3>
@@ -148,7 +148,7 @@ function Matches() {
             </button>
           </div>
         </div>
-      </div>
+              </div>
 
       {/* Match Animation */}
       {showMatchAnimation && (
@@ -171,22 +171,22 @@ function Matches() {
               You matched with {matchedTherapist.name}! Start a conversation to learn more.
             </p>
             <div className="flex justify-center space-x-4">
-              <button
+                <button
                 onClick={() => setShowMatchAnimation(false)}
                 className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
+                >
                 Keep Browsing
-              </button>
-              <button
+                </button>
+                <button
                 onClick={handleMessage}
                 className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
-              >
+                >
                 <MessageCircle className="h-5 w-5" />
-                <span>Message</span>
-              </button>
+                  <span>Message</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
       )}
     </div>
   );
